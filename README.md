@@ -63,7 +63,25 @@ This application provides a sequential workflow for patients to complete require
 - Session management
 - Data persistence for all questionnaires
 
+✅ **Admin Dashboard** (NEW!)
+- Full-featured admin interface with MOG branding
+- Dashboard overview with statistics
+- Patient list with search and filtering
+- Individual patient detail views
+- View all completed questionnaires
+- IFC pre-fill interface for staff
+- Responsive design with sidebar navigation
+
+✅ **MOG Brand Styling** (NEW!)
+- Maroon/burgundy (#8B1F41) and gold (#D4AF37) color scheme
+- Professional medical aesthetic
+- Consistent branding across all pages
+- Custom CSS with MOG design system
+
 ## URLs
+
+- **Patient Portal**: http://localhost:3000
+- **Admin Dashboard**: http://localhost:3000/admin
 
 - **Local Development**: http://localhost:3000
 - **Sandbox URL**: https://3000-i9m6xc6zlvaun9eeh4bzj-3844e1b6.sandbox.novita.ai
@@ -148,14 +166,41 @@ This application provides a sequential workflow for patients to complete require
 
 ### For Staff/Admins
 
+**Accessing Admin Dashboard**:
+1. Navigate to http://localhost:3000/admin
+2. View dashboard statistics:
+   - Total patients
+   - Completed sessions
+   - In-progress sessions
+   - Today's new patients
+
+**Managing Patients**:
+1. Click "Patients" in sidebar to view all patients
+2. Use search box to find specific patients
+3. Filter by status (Completed/In Progress)
+4. Click "View Details" icon to see full patient information
+
+**Viewing Patient Details**:
+- See all patient information
+- View completed questionnaires (ODI, VAS, EQ-5D-3L, Consent, IFC)
+- See detailed responses for each questionnaire
+- View progress indicators
+
+**Pre-filling IFC Data**:
+1. Go to patient detail page
+2. Click "Pre-fill IFC Data" button
+3. Enter financial information:
+   - Quote number (auto-generated)
+   - Item number (e.g., 51011)
+   - Procedure description
+   - Fee and rebate amounts (gap auto-calculated)
+4. Click "Save IFC Data"
+5. Patient will see pre-filled data when completing IFC form
+
 **Database Initialization** (Already done in development):
 ```bash
 curl -X POST http://localhost:3000/api/init-db
 ```
-
-**Pre-filling IFC Data**:
-- Currently, patients enter IFC details manually
-- Future enhancement: Admin interface to pre-populate IFC data per patient
 
 ## Development
 
@@ -189,7 +234,9 @@ webapp/
 │   └── types.ts           # TypeScript type definitions
 ├── public/
 │   └── static/
-│       └── app.js         # Frontend JavaScript (all forms)
+│       ├── app.js         # Patient questionnaire frontend
+│       ├── admin.js       # Admin dashboard frontend
+│       └── styles.css     # MOG brand styling
 ├── migrations/
 │   └── 0001_initial_schema.sql  # Database schema
 ├── .wrangler/             # Local D1 database (auto-generated)
@@ -214,13 +261,20 @@ webapp/
 
 **Admin:**
 - `POST /api/init-db` - Initialize database (development)
+- `GET /api/admin/patients` - Get all patients list
+- `GET /api/admin/patients/:id` - Get patient details with all responses
+- `GET /api/admin/stats` - Get dashboard statistics
+- `PUT /api/admin/ifc/:session_token` - Update/pre-fill IFC data
 - `GET /api/admin/ifc/:session_token` - Get IFC template data
+
+**Admin Pages:**
+- `/admin` - Dashboard overview
+- `/admin/patients` - Patient list with search and filter
+- `/admin/patients/:id` - Individual patient detail view
 
 ## Features Not Yet Implemented
 
 ### Medium Priority
-- [ ] Admin dashboard to view all patient submissions
-- [ ] Admin interface to pre-fill IFC data per patient
 - [ ] Email notifications after completion
 - [ ] PDF generation of completed forms
 - [ ] Patient data export functionality
