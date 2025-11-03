@@ -25,7 +25,7 @@ function updateProgressBar(currentStep, completedSteps) {
             circle.classList.add('bg-green-500');
         } else if (i === currentStep) {
             circle.classList.remove('bg-gray-300');
-            circle.classList.add('bg-blue-600');
+            circle.classList.add('bg-mog-maroon');
         }
     }
 }
@@ -158,8 +158,8 @@ function renderODI() {
             ])}
             
             <div class="pt-6 border-t">
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Save and Continue
+                <button type="submit" class="w-full btn-mog-primary">
+                    <i class="fas fa-save mr-2"></i>Save and Continue
                 </button>
             </div>
         </form>
@@ -170,7 +170,7 @@ function renderODI() {
 
 function generateODISection(name, title, options) {
     return `
-        <div class="border-l-4 border-blue-500 pl-4">
+        <div class="border-l-4 border-mog-maroon pl-4">
             <h3 class="font-semibold text-gray-800 mb-3">${title}</h3>
             <div class="space-y-2">
                 ${options.map((option, index) => `
@@ -231,8 +231,8 @@ function renderVAS() {
             ${generateVASSlider('left_leg', 'Left Leg')}
             
             <div class="pt-6 border-t">
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Save and Continue
+                <button type="submit" class="w-full btn-mog-primary">
+                    <i class="fas fa-save mr-2"></i>Save and Continue
                 </button>
             </div>
         </form>
@@ -251,7 +251,7 @@ function renderVAS() {
 
 function generateVASSlider(name, label) {
     return `
-        <div class="border-l-4 border-blue-500 pl-4">
+        <div class="border-l-4 border-mog-maroon pl-4">
             <div class="flex justify-between items-center mb-2">
                 <h3 class="font-semibold text-gray-800">${label}</h3>
                 <span class="text-2xl font-bold text-blue-600" id="${name}_value">5.0</span>
@@ -334,7 +334,7 @@ function renderEQ5D() {
                 'I am extremely anxious or depressed'
             ])}
             
-            <div class="border-l-4 border-blue-500 pl-4">
+            <div class="border-l-4 border-mog-maroon pl-4">
                 <h3 class="font-semibold text-gray-800 mb-4">Your Health State Today</h3>
                 <p class="text-sm text-gray-600 mb-4">
                     Please indicate on a scale of 0-100 how good or bad your health state is today.
@@ -354,8 +354,8 @@ function renderEQ5D() {
             </div>
             
             <div class="pt-6 border-t">
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Save and Continue
+                <button type="submit" class="w-full btn-mog-primary">
+                    <i class="fas fa-save mr-2"></i>Save and Continue
                 </button>
             </div>
         </form>
@@ -372,7 +372,7 @@ function renderEQ5D() {
 
 function generateEQ5DSection(name, title, options) {
     return `
-        <div class="border-l-4 border-blue-500 pl-4">
+        <div class="border-l-4 border-mog-maroon pl-4">
             <h3 class="font-semibold text-gray-800 mb-3">${title}</h3>
             <div class="space-y-2">
                 ${options.map((option, index) => `
@@ -486,7 +486,7 @@ function renderSurgicalConsent() {
             </div>
             
             ${consentItems.map((item, index) => `
-                <div class="border-l-4 border-blue-500 pl-4 py-3 bg-gray-50 rounded">
+                <div class="border-l-4 border-mog-maroon pl-4 py-3 bg-gray-50 rounded">
                     <div class="flex items-start gap-4">
                         <div class="flex-1">
                             <p class="text-sm font-semibold text-gray-700 mb-2">Item ${index + 1}</p>
@@ -519,8 +519,8 @@ function renderSurgicalConsent() {
             </div>
             
             <div class="pt-6 border-t">
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Save and Continue
+                <button type="submit" class="w-full btn-mog-primary">
+                    <i class="fas fa-save mr-2"></i>Save and Continue
                 </button>
             </div>
         </form>
@@ -705,8 +705,8 @@ function renderIFC() {
             </div>
             
             <div class="pt-6 border-t">
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
-                    Complete All Questionnaires
+                <button type="submit" class="w-full btn-mog-primary" style="background-color: #28A745;">
+                    <i class="fas fa-check-double mr-2"></i>Complete All Questionnaires
                 </button>
             </div>
         </form>

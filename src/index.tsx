@@ -467,14 +467,23 @@ app.get('/', (c) => {
         <title>Prof Aaron Buckland - Surgical Questionnaires</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
     </head>
-    <body class="bg-gray-50">
-        <div class="min-h-screen flex items-center justify-center p-4">
+    <body class="bg-mog-gray">
+        <!-- Header Banner -->
+        <div class="header-banner">
+            <span>Start Your Path to a Healthier Spine Today  |  <a href="/admin">Staff Login</a></span>
+        </div>
+        
+        <div class="min-h-screen flex items-center justify-center p-4 py-12">
             <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
                 <div class="text-center mb-8">
-                    <i class="fas fa-hospital text-blue-600 text-5xl mb-4"></i>
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Prof Aaron Buckland</h1>
-                    <p class="text-gray-600">Lumbar Spine Surgery Questionnaires</p>
+                    <div class="bg-mog-maroon text-white w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-hospital text-4xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-mog-maroon mb-2">Prof Aaron Buckland</h1>
+                    <p class="text-mog-dark-gray">Melbourne Orthopaedic Group</p>
+                    <p class="text-sm text-gray-600 mt-2">Lumbar Spine Surgery Questionnaires</p>
                 </div>
 
                 <form id="patientForm" class="space-y-4">
@@ -508,13 +517,17 @@ app.get('/', (c) => {
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
-                    <button type="submit"
-                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                        Start Questionnaires
+                    <button type="submit" class="w-full btn-mog-primary">
+                        <i class="fas fa-clipboard-list mr-2"></i>Start Questionnaires
                     </button>
                 </form>
 
                 <div id="error" class="mt-4 hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"></div>
+                
+                <div class="mt-6 pt-6 border-t text-center text-sm text-gray-600">
+                    <p class="mb-2">Need assistance?</p>
+                    <p>Phone: <a href="tel:+61391247950" class="text-mog-gold hover:text-mog-light-gold font-semibold">+61 3 9124 7950</a></p>
+                </div>
             </div>
         </div>
 
@@ -553,13 +566,23 @@ app.get('/questionnaire/:token', (c) => {
         <title>Questionnaires - Prof Aaron Buckland</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
     </head>
-    <body class="bg-gray-50">
+    <body class="bg-mog-gray">
+        <!-- Header Banner -->
+        <div class="header-banner">
+            <span>Prof Aaron Buckland - Lumbar Spine Surgery Questionnaires</span>
+        </div>
+        
         <div class="min-h-screen py-8">
             <!-- Progress Bar -->
             <div class="max-w-4xl mx-auto px-4 mb-8">
                 <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="mb-4 text-center">
+                        <h2 class="text-lg font-semibold text-mog-maroon">Questionnaire Progress</h2>
+                        <p class="text-sm text-mog-dark-gray">Complete all 5 sections</p>
+                    </div>
+                    <div class="flex justify-between items-center">
                         <div id="step1" class="flex-1 text-center step-indicator">
                             <div class="w-10 h-10 mx-auto rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">1</div>
                             <p class="text-xs mt-2 text-gray-600">ODI</p>
@@ -592,7 +615,7 @@ app.get('/questionnaire/:token', (c) => {
             <div class="max-w-4xl mx-auto px-4">
                 <div id="questionnaireContainer" class="bg-white rounded-lg shadow-lg p-8">
                     <div class="text-center py-12">
-                        <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+                        <div class="spinner mx-auto mb-4"></div>
                         <p class="text-gray-600">Loading questionnaire...</p>
                     </div>
                 </div>
@@ -612,6 +635,478 @@ app.get('/questionnaire/:token', (c) => {
   `)
 })
 
+// ==================== Admin API Routes ====================
+
+// Get all patients with their session status
+app.get('/api/admin/patients', async (c) => {
+  const { DB } = c.env
+  
+  try {
+    const result = await DB.prepare(`
+      SELECT 
+        p.*,
+        s.session_token,
+        s.current_step,
+        s.completed_steps,
+        s.status,
+        s.created_at as session_created_at
+      FROM patients p
+      LEFT JOIN sessions s ON p.id = s.patient_id
+      ORDER BY p.created_at DESC
+    `).all()
+    
+    return c.json(result.results || [])
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch patients' }, 500)
+  }
+})
+
+// Get single patient with all questionnaire data
+app.get('/api/admin/patients/:id', async (c) => {
+  const { DB } = c.env
+  const patientId = c.req.param('id')
+  
+  try {
+    // Get patient and session info
+    const patient = await DB.prepare(`
+      SELECT 
+        p.*,
+        s.id as session_id,
+        s.session_token,
+        s.current_step,
+        s.completed_steps,
+        s.status,
+        s.created_at as session_created_at
+      FROM patients p
+      LEFT JOIN sessions s ON p.id = s.patient_id
+      WHERE p.id = ?
+    `).bind(patientId).first()
+    
+    if (!patient) {
+      return c.json({ error: 'Patient not found' }, 404)
+    }
+    
+    // Get ODI responses
+    const odi = await DB.prepare(`
+      SELECT * FROM odi_responses WHERE session_id = ?
+    `).bind(patient.session_id).first()
+    
+    // Get VAS responses
+    const vas = await DB.prepare(`
+      SELECT * FROM vas_responses WHERE session_id = ?
+    `).bind(patient.session_id).first()
+    
+    // Get EQ5D responses
+    const eq5d = await DB.prepare(`
+      SELECT * FROM eq5d_responses WHERE session_id = ?
+    `).bind(patient.session_id).first()
+    
+    // Get Surgical Consent
+    const consent = await DB.prepare(`
+      SELECT * FROM surgical_consent WHERE session_id = ?
+    `).bind(patient.session_id).first()
+    
+    // Get IFC
+    const ifc = await DB.prepare(`
+      SELECT * FROM ifc_responses WHERE session_id = ?
+    `).bind(patient.session_id).first()
+    
+    return c.json({
+      patient,
+      odi,
+      vas,
+      eq5d,
+      consent: consent ? {
+        ...consent,
+        consent_items: JSON.parse(consent.consent_items as string)
+      } : null,
+      ifc
+    })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch patient data' }, 500)
+  }
+})
+
+// Get dashboard statistics
+app.get('/api/admin/stats', async (c) => {
+  const { DB } = c.env
+  
+  try {
+    const totalPatients = await DB.prepare(`SELECT COUNT(*) as count FROM patients`).first()
+    const completedSessions = await DB.prepare(`SELECT COUNT(*) as count FROM sessions WHERE status = 'completed'`).first()
+    const inProgressSessions = await DB.prepare(`SELECT COUNT(*) as count FROM sessions WHERE status = 'in_progress'`).first()
+    const todayPatients = await DB.prepare(`SELECT COUNT(*) as count FROM patients WHERE DATE(created_at) = DATE('now')`).first()
+    
+    return c.json({
+      total_patients: totalPatients?.count || 0,
+      completed_sessions: completedSessions?.count || 0,
+      in_progress_sessions: inProgressSessions?.count || 0,
+      today_patients: todayPatients?.count || 0
+    })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch statistics' }, 500)
+  }
+})
+
+// Update IFC data for a patient
+app.put('/api/admin/ifc/:session_token', async (c) => {
+  const { DB } = c.env
+  const session_token = c.req.param('session_token')
+  const body = await c.req.json<{
+    quote_number: string
+    item_number: string
+    description: string
+    fee: number
+    rebate: number
+    gap: number
+  }>()
+  
+  try {
+    // Check if session exists
+    const session = await DB.prepare(`
+      SELECT id FROM sessions WHERE session_token = ?
+    `).bind(session_token).first()
+    
+    if (!session) {
+      return c.json({ error: 'Session not found' }, 404)
+    }
+    
+    // Check if IFC already exists
+    const existing = await DB.prepare(`
+      SELECT id FROM ifc_responses WHERE session_id = ?
+    `).bind(session.id).first()
+    
+    if (existing) {
+      // Update existing
+      await DB.prepare(`
+        UPDATE ifc_responses 
+        SET quote_number = ?, item_number = ?, description = ?, fee = ?, rebate = ?, gap = ?
+        WHERE session_id = ?
+      `).bind(
+        body.quote_number,
+        body.item_number,
+        body.description,
+        body.fee,
+        body.rebate,
+        body.gap,
+        session.id
+      ).run()
+    } else {
+      // Create new
+      await DB.prepare(`
+        INSERT INTO ifc_responses (session_id, quote_number, item_number, description, fee, rebate, gap)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        session.id,
+        body.quote_number,
+        body.item_number,
+        body.description,
+        body.fee,
+        body.rebate,
+        body.gap
+      ).run()
+    }
+    
+    return c.json({ success: true })
+  } catch (error) {
+    return c.json({ error: 'Failed to update IFC data' }, 500)
+  }
+})
+
+// ==================== Admin Dashboard Pages ====================
+
+// Admin dashboard home
+app.get('/admin', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Dashboard - Prof Aaron Buckland</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body class="bg-mog-gray">
+        <!-- Header Banner -->
+        <div class="header-banner">
+            <span>Melbourne Orthopaedic Group - Admin Dashboard</span>
+        </div>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <div class="admin-sidebar w-64 flex-shrink-0">
+                <div class="p-6">
+                    <h2 class="text-xl font-bold mb-1">MOG Admin</h2>
+                    <p class="text-sm opacity-75">Prof Aaron Buckland</p>
+                </div>
+                
+                <nav>
+                    <a href="/admin" class="admin-sidebar-item active flex items-center">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/admin/patients" class="admin-sidebar-item flex items-center">
+                        <i class="fas fa-users w-6"></i>
+                        <span>Patients</span>
+                    </a>
+                    <a href="/" class="admin-sidebar-item flex items-center">
+                        <i class="fas fa-home w-6"></i>
+                        <span>Public Site</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 p-8">
+                <h1 class="text-3xl font-bold text-mog-maroon mb-8">Dashboard Overview</h1>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statsContainer">
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-mog-dark-gray text-sm font-medium">Total Patients</p>
+                                <p class="text-3xl font-bold text-mog-maroon mt-2" id="totalPatients">-</p>
+                            </div>
+                            <div class="bg-mog-maroon bg-opacity-10 rounded-full p-3">
+                                <i class="fas fa-users text-2xl text-mog-maroon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-mog-dark-gray text-sm font-medium">Completed</p>
+                                <p class="text-3xl font-bold text-green-600 mt-2" id="completedSessions">-</p>
+                            </div>
+                            <div class="bg-green-100 rounded-full p-3">
+                                <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-mog-dark-gray text-sm font-medium">In Progress</p>
+                                <p class="text-3xl font-bold text-mog-gold mt-2" id="inProgressSessions">-</p>
+                            </div>
+                            <div class="bg-yellow-100 rounded-full p-3">
+                                <i class="fas fa-clock text-2xl text-mog-gold"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-mog-dark-gray text-sm font-medium">Today</p>
+                                <p class="text-3xl font-bold text-blue-600 mt-2" id="todayPatients">-</p>
+                            </div>
+                            <div class="bg-blue-100 rounded-full p-3">
+                                <i class="fas fa-calendar-day text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Patients -->
+                <div class="card fade-in">
+                    <div class="card-header flex justify-between items-center">
+                        <h2 class="text-lg">Recent Patients</h2>
+                        <a href="/admin/patients" class="text-mog-gold hover:text-mog-light-gold text-sm">
+                            View All <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentPatientsTable">
+                            <div class="flex justify-center py-8">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/admin.js"></script>
+    </body>
+    </html>
+  `)
+})
+
+// Admin patients list page
+app.get('/admin/patients', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Patients - Admin Dashboard</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body class="bg-mog-gray">
+        <!-- Header Banner -->
+        <div class="header-banner">
+            <span>Melbourne Orthopaedic Group - Admin Dashboard</span>
+        </div>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <div class="admin-sidebar w-64 flex-shrink-0">
+                <div class="p-6">
+                    <h2 class="text-xl font-bold mb-1">MOG Admin</h2>
+                    <p class="text-sm opacity-75">Prof Aaron Buckland</p>
+                </div>
+                
+                <nav>
+                    <a href="/admin" class="admin-sidebar-item flex items-center">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/admin/patients" class="admin-sidebar-item active flex items-center">
+                        <i class="fas fa-users w-6"></i>
+                        <span>Patients</span>
+                    </a>
+                    <a href="/" class="admin-sidebar-item flex items-center">
+                        <i class="fas fa-home w-6"></i>
+                        <span>Public Site</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h1 class="text-3xl font-bold text-mog-maroon">All Patients</h1>
+                    <div class="flex gap-4">
+                        <input type="text" id="searchInput" placeholder="Search patients..."
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mog-maroon focus:border-transparent">
+                        <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mog-maroon focus:border-transparent">
+                            <option value="">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="in_progress">In Progress</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-striped table-hover">
+                            <thead class="bg-mog-maroon text-white">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Patient Name</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">DOB</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Hospital</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Email</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Status</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Progress</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Created</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patientsTableBody">
+                                <tr>
+                                    <td colspan="8" class="px-6 py-12 text-center">
+                                        <div class="flex justify-center">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/admin.js"></script>
+        <script>
+            loadPatientsPage();
+        </script>
+    </body>
+    </html>
+  `)
+})
+
+// Admin patient detail page
+app.get('/admin/patients/:id', (c) => {
+  const patientId = c.req.param('id')
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Patient Details - Admin Dashboard</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body class="bg-mog-gray">
+        <!-- Header Banner -->
+        <div class="header-banner">
+            <span>Melbourne Orthopaedic Group - Admin Dashboard</span>
+        </div>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <div class="admin-sidebar w-64 flex-shrink-0">
+                <div class="p-6">
+                    <h2 class="text-xl font-bold mb-1">MOG Admin</h2>
+                    <p class="text-sm opacity-75">Prof Aaron Buckland</p>
+                </div>
+                
+                <nav>
+                    <a href="/admin" class="admin-sidebar-item flex items-center">
+                        <i class="fas fa-chart-line w-6"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/admin/patients" class="admin-sidebar-item active flex items-center">
+                        <i class="fas fa-users w-6"></i>
+                        <span>Patients</span>
+                    </a>
+                    <a href="/" class="admin-sidebar-item flex items-center">
+                        <i class="fas fa-home w-6"></i>
+                        <span>Public Site</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 p-8">
+                <div class="mb-6">
+                    <a href="/admin/patients" class="text-mog-gold hover:text-mog-light-gold">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Patients
+                    </a>
+                </div>
+
+                <div id="patientDetailContainer">
+                    <div class="flex justify-center py-12">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/admin.js"></script>
+        <script>
+            loadPatientDetail('${patientId}');
+        </script>
+    </body>
+    </html>
+  `)
+})
+
 // Completion page
 app.get('/complete', (c) => {
   return c.html(`
@@ -623,19 +1118,38 @@ app.get('/complete', (c) => {
         <title>Complete - Prof Aaron Buckland</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
     </head>
-    <body class="bg-gray-50">
+    <body class="bg-mog-gray">
+        <!-- Header Banner -->
+        <div class="header-banner">
+            <span>Prof Aaron Buckland - Melbourne Orthopaedic Group</span>
+        </div>
+        
         <div class="min-h-screen flex items-center justify-center p-4">
             <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-                <i class="fas fa-check-circle text-green-500 text-6xl mb-6"></i>
-                <h1 class="text-2xl font-bold text-gray-800 mb-4">All Questionnaires Complete!</h1>
-                <p class="text-gray-600 mb-6">
+                <div class="bg-green-100 w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-check-circle text-green-500 text-5xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-mog-maroon mb-4">All Questionnaires Complete!</h1>
+                <p class="text-mog-dark-gray mb-6">
                     Thank you for completing all the required questionnaires. 
                     Your responses have been saved successfully.
                 </p>
-                <p class="text-sm text-gray-500">
-                    Prof Aaron Buckland's office will review your responses and contact you regarding next steps.
-                </p>
+                <div class="bg-mog-gray p-6 rounded-lg mb-6">
+                    <p class="text-sm text-gray-700 mb-4">
+                        <i class="fas fa-info-circle text-mog-gold mr-2"></i>
+                        Prof Aaron Buckland's office will review your responses and contact you regarding next steps.
+                    </p>
+                    <div class="text-sm text-gray-600">
+                        <p class="font-semibold text-mog-maroon mb-2">Contact Information:</p>
+                        <p><i class="fas fa-phone mr-2"></i>+61 3 9124 7950</p>
+                        <p><i class="fas fa-envelope mr-2"></i>admin.buckland@mog.com.au</p>
+                    </div>
+                </div>
+                <a href="/" class="btn-mog-primary inline-block">
+                    <i class="fas fa-home mr-2"></i>Return to Home
+                </a>
             </div>
         </div>
     </body>
