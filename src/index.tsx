@@ -2,8 +2,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from '@hono/node-server/serve-static'
-import type { Patient, Session, ODIResponse, VASResponse, EQ5DResponse, SurgicalConsent, IFCResponse } from './types'
-import dbAdapter from './db'
+import type { Patient, Session, ODIResponse, VASResponse, EQ5DResponse, SurgicalConsent, IFCResponse } from './types.js'
+import dbAdapter from './db.js'
 
 
 const app = new Hono()
