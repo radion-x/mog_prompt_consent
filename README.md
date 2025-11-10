@@ -86,7 +86,7 @@ This application provides a sequential workflow for patients to complete require
 - **Local Development**: http://localhost:3000
 - **Sandbox URL**: https://3000-i9m6xc6zlvaun9eeh4bzj-3844e1b6.sandbox.novita.ai
 - **Production**: (To be deployed to Cloudflare Pages)
-- **GitHub**: (To be added after repository setup)
+- **GitHub Repository**: https://github.com/markbingemann-stack/MOG-prom-consent
 
 ## Data Architecture
 
