@@ -1,9 +1,13 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { serveStatic } from 'hono/cloudflare-workers'
-import type { Bindings, Patient, Session, ODIResponse, VASResponse, EQ5DResponse, SurgicalConsent, IFCResponse } from './types'
+import { serveStatic } from '@hono/node-server/serve-static'
+import type { Patient, Session, ODIResponse, VASResponse, EQ5DResponse, SurgicalConsent, IFCResponse } from './types'
+import dbAdapter from './db'
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono()
+
+// Database reference
+const DB = dbAdapter
 
 // Enable CORS for API routes
 app.use('/api/*', cors())
@@ -15,7 +19,7 @@ app.use('/static/*', serveStatic({ root: './public' }))
 
 // Database initialization endpoint (for development only)
 app.post('/api/init-db', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   
   try {
     // Create tables one by one
@@ -139,7 +143,7 @@ app.post('/api/init-db', async (c) => {
 
 // Create new patient session
 app.post('/api/sessions/create', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const body = await c.req.json<Patient>()
   
   try {
@@ -172,13 +176,19 @@ app.post('/api/sessions/create', async (c) => {
       patient_id 
     })
   } catch (error) {
-    return c.json({ error: 'Failed to create session' }, 500)
+    // Log error for debugging (will appear in Wrangler logs)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    return c.json({ 
+      error: 'Failed to create session', 
+      message: 'Please refresh the page and try again. If the problem persists, contact support.',
+      details: errorMsg 
+    }, 500)
   }
 })
 
 // Get session status
 app.get('/api/sessions/:token', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const token = c.req.param('token')
   
   try {
@@ -204,7 +214,7 @@ app.get('/api/sessions/:token', async (c) => {
 
 // Submit ODI questionnaire
 app.post('/api/questionnaires/odi', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const body = await c.req.json<ODIResponse & { session_token: string }>()
   
   try {
@@ -256,7 +266,7 @@ app.post('/api/questionnaires/odi', async (c) => {
 
 // Submit VAS questionnaire
 app.post('/api/questionnaires/vas', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const body = await c.req.json<VASResponse & { session_token: string }>()
   
   try {
@@ -299,7 +309,7 @@ app.post('/api/questionnaires/vas', async (c) => {
 
 // Submit EQ5D questionnaire
 app.post('/api/questionnaires/eq5d', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const body = await c.req.json<EQ5DResponse & { session_token: string }>()
   
   try {
@@ -342,7 +352,7 @@ app.post('/api/questionnaires/eq5d', async (c) => {
 
 // Submit Surgical Consent
 app.post('/api/questionnaires/consent', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const body = await c.req.json<SurgicalConsent & { session_token: string }>()
   
   try {
@@ -384,7 +394,7 @@ app.post('/api/questionnaires/consent', async (c) => {
 
 // Submit IFC
 app.post('/api/questionnaires/ifc', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const body = await c.req.json<IFCResponse & { session_token: string }>()
   
   try {
@@ -429,7 +439,7 @@ app.post('/api/questionnaires/ifc', async (c) => {
 
 // Admin: Get IFC template
 app.get('/api/admin/ifc/:session_token', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const session_token = c.req.param('session_token')
   
   try {
@@ -537,6 +547,10 @@ app.get('/', (c) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData);
+                
+                // Clear any previous errors
+                const errorEl = document.getElementById('error');
+                errorEl.classList.add('hidden');
 
                 try {
                     const response = await axios.post('/api/sessions/create', data);
@@ -544,8 +558,22 @@ app.get('/', (c) => {
                         window.location.href = '/questionnaire/' + response.data.session_token;
                     }
                 } catch (error) {
-                    document.getElementById('error').textContent = 'Error creating session. Please try again.';
-                    document.getElementById('error').classList.remove('hidden');
+                    let errorMessage = 'Error creating session. Please try again.';
+                    
+                    // If server returned a specific error message, use it
+                    if (error.response?.data?.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response?.data?.error) {
+                        errorMessage = error.response.data.error;
+                    }
+                    
+                    errorEl.textContent = errorMessage;
+                    errorEl.classList.remove('hidden');
+                    
+                    // Auto-hide error after 10 seconds
+                    setTimeout(() => {
+                        errorEl.classList.add('hidden');
+                    }, 10000);
                 }
             });
         </script>
@@ -639,7 +667,7 @@ app.get('/questionnaire/:token', (c) => {
 
 // Get all patients with their session status
 app.get('/api/admin/patients', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   
   try {
     const result = await DB.prepare(`
@@ -663,7 +691,7 @@ app.get('/api/admin/patients', async (c) => {
 
 // Get single patient with all questionnaire data
 app.get('/api/admin/patients/:id', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const patientId = c.req.param('id')
   
   try {
@@ -729,7 +757,7 @@ app.get('/api/admin/patients/:id', async (c) => {
 
 // Get dashboard statistics
 app.get('/api/admin/stats', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   
   try {
     const totalPatients = await DB.prepare(`SELECT COUNT(*) as count FROM patients`).first()
@@ -750,7 +778,7 @@ app.get('/api/admin/stats', async (c) => {
 
 // Update IFC data for a patient
 app.put('/api/admin/ifc/:session_token', async (c) => {
-  const { DB } = c.env
+  // Using local SQLite DB
   const session_token = c.req.param('session_token')
   const body = await c.req.json<{
     quote_number: string

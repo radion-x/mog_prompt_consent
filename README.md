@@ -213,16 +213,41 @@ npm install
 # Build project
 npm run build
 
-# Initialize database
-curl -X POST http://localhost:3000/api/init-db
-
 # Start development server
-npm run dev:sandbox
-# or with PM2
-pm2 start ecosystem.config.cjs
+npm run dev
+# This will start Vite dev server on http://localhost:5173
 
-# Test
-curl http://localhost:3000
+# The application will automatically initialize the database
+# on first session creation (no manual initialization needed!)
+```
+
+### Database Setup
+
+The application now includes **automatic database initialization**. When you create your first patient session, the database tables will be created automatically.
+
+**Manual Database Initialization (Optional):**
+If you need to manually initialize the database:
+```bash
+# Using the API endpoint
+curl -X POST http://localhost:5173/api/init-db
+
+# Or using Wrangler migrations (requires Cloudflare account)
+npm run db:migrate:local
+```
+
+### Common Issues
+
+**"Error creating session" on first use:**
+- ✅ **FIXED!** The app now auto-initializes the database on first session creation
+- If you still see this error, try refreshing the page and submitting again
+- The database tables will be created automatically on the first attempt
+
+**Port already in use:**
+```bash
+# Kill process on port 5173
+npm run clean-port
+# or manually
+lsof -ti:5173 | xargs kill -9
 ```
 
 ### Project Structure

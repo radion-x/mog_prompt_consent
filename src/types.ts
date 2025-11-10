@@ -1,7 +1,3 @@
-export type Bindings = {
-  DB: D1Database;
-}
-
 export interface Patient {
   id?: number;
   name: string;
