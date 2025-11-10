@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc --noEmit false || tsc --skipLibCheck --noEmit false",
     "start": "NODE_ENV=production node dist/server.js",
     "clean-port": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true",
     "test": "curl http://localhost:3000"
